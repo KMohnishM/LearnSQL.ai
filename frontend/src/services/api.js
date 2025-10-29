@@ -1,9 +1,10 @@
 import axios from 'axios';
 
-// Use production URL for deployment, fallback to localhost for development
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://learn-sql-ai.vercel.app/api'
-  : 'http://localhost:8000/api';
+// Use environment variable or fallback based on NODE_ENV
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD 
+    ? 'https://learn-sql-ai.vercel.app/api'
+    : 'http://localhost:8000/api');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
