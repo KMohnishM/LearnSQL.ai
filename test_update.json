@@ -1,0 +1,5 @@
+{
+  "question_id": "1_easy_1234",
+  "user_sql": "UPDATE books SET status = 'damaged', return_date = CURRENT_DATE, late_fee = 15.00 WHERE book_id = 42;",
+  "expected_sql": ""
+}

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Markdown Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .chatbot-message {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            max-width: 600px;
+        }
+        .markdown-content h1 { font-size: 1.125rem; font-weight: bold; color: #111827; margin-bottom: 8px; margin-top: 16px; }
+        .markdown-content h1:first-child { margin-top: 0; }
+        .markdown-content h2 { font-size: 1rem; font-weight: bold; color: #111827; margin-bottom: 8px; margin-top: 12px; }
+        .markdown-content h2:first-child { margin-top: 0; }
+        .markdown-content h3 { font-size: 0.875rem; font-weight: bold; color: #111827; margin-bottom: 4px; margin-top: 8px; }
+        .markdown-content h3:first-child { margin-top: 0; }
+        .markdown-content strong { font-weight: 600; color: #111827; }
+        .markdown-content em { font-style: italic; color: #1f2937; }
+        .markdown-content p { margin-bottom: 8px; }
+        .markdown-content p:last-child { margin-bottom: 0; }
+        .markdown-content ul { list-style-type: disc; padding-left: 16px; margin-bottom: 8px; }
+        .markdown-content ol { list-style-type: decimal; padding-left: 16px; margin-bottom: 8px; }
+        .markdown-content li { font-size: 0.875rem; margin-bottom: 4px; }
+        .markdown-content code { background-color: #f3f4f6; color: #1f2937; padding: 2px 4px; border-radius: 3px; font-size: 0.75rem; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace; }
+        .markdown-content blockquote { border-left: 4px solid #d1d5db; padding-left: 12px; font-style: italic; color: #4b5563; margin-bottom: 8px; }
+        .sql-code {
+            background-color: #1a1a1a;
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.8rem;
+            margin: 8px 0;
+            overflow-x: auto;
+        }
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .code-label {
+            font-size: 0.6875rem;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .copy-btn {
+            background: none;
+            border: none;
+            color: #6b7280;
+            font-size: 0.6875rem;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .copy-btn:hover {
+            color: #374151;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatbot Markdown Formatting Test</h1>
+    
+    <div class="chatbot-message">
+        <div class="markdown-content">
+            <p><strong>Great job on creating a table!</strong> Now, you're ready to add a primary key to one of its columns. Adding a primary key is a crucial step in table design, as it uniquely identifies each row in your table.</p>
+            
+            <p>To make a column as a primary key, you'll use the <code>ALTER TABLE</code> statement in SQL. Here's a step-by-step guide:</p>
+            
+            <h3>Syntax</h3>
+        </div>
+        
+        <div class="code-header">
+            <span class="code-label">SQL Code</span>
+            <button class="copy-btn">📋 Copy</button>
+        </div>
+        <div class="sql-code">ALTER TABLE table_name
+ADD CONSTRAINT primary_key_name PRIMARY KEY (column_name);</div>
+        
+        <div class="markdown-content">
+            <ul>
+                <li><code>table_name</code> is the name of your table.</li>
+                <li><code>primary_key_name</code> is the name you want to give to your primary key constraint.</li>
+                <li><code>column_name</code> is the name of the column you want to make as the primary key.</li>
+            </ul>
+            
+            <h3>Example</h3>
+            <p>Let's say you have a table called <code>employees</code> and you want to make the <code>employee_id</code> column as the primary key. Your SQL statement would look like this:</p>
+        </div>
+        
+        <div class="code-header">
+            <span class="code-label">SQL Code</span>
+            <button class="copy-btn">📋 Copy</button>
+        </div>
+        <div class="sql-code">ALTER TABLE employees
+ADD CONSTRAINT pk_employee_id PRIMARY KEY (employee_id);</div>
+        
+        <div class="markdown-content">
+            <h3>Best Practices</h3>
+            <ul>
+                <li>Choose a column that is unique for each row. Typically, this is an auto-incrementing ID column.</li>
+                <li>Primary keys are used in indexing, which can improve query performance.</li>
+                <li>You can have only one primary key per table.</li>
+            </ul>
+            
+            <p>Now that you've learned how to add a primary key, I recommend practicing with a sample table to solidify your understanding. You can try creating a table with a primary key in our <strong>Practice Module</strong>. If you need help with table creation or have any questions, feel free to ask!</p>
+        </div>
+    </div>
+
+    <script>
+        // Add copy functionality
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const codeBlock = this.parentElement.nextElementSibling;
+                const textToCopy = codeBlock.textContent;
+                
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = this.textContent;
+                    this.textContent = '✅ Copied!';
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

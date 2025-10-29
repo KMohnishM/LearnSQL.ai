@@ -1,0 +1,82 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+
+# Vite / build outputs
+/dist/
+/build/
+/.vite/
+
+# Python
+venv/
+venv\Scripts/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg-info/
+*.egg
+
+# SQLite and DB files
+*.sqlite
+*.sqlite3
+*.db
+sql_learning.db
+
+# Environment
+.env
+.env.*
+.env.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test output
+coverage/
+coverage/**/*
+.coverage
+.pytest_cache/
+*.pytest_cache
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+dist/
+coverage/
+.venv/
+__pycache__/
+
+# Frontend specific
+/frontend/node_modules/
+/frontend/dist/
+
+# Backend specific
+/backend/venv/
+/backend/sql_learning.db
+
+# Ignore local JetBrains configs
+*.iml
+
+# Ignore secrets in case they are accidentally copied
+*.pem
+*.key
+
+# End of .gitignore

@@ -1,0 +1,5 @@
+{
+  "question_id": "1_easy_5678",
+  "user_sql": "CREATE TABLE restaurants (restaurant_id INT PRIMARY KEY AUTO_INCREMENT, restaurant_name VARCHAR(100) NOT NULL, cuisine_type VARCHAR(50), delivery_area VARCHAR(100), phone_number VARCHAR(20), is_active BOOLEAN DEFAULT TRUE); INSERT INTO restaurants (restaurant_name, cuisine_type, delivery_area, phone_number) VALUES ('Mario Pizza', 'Italian', 'Downtown', '555-0123'), ('Dragon Garden', 'Chinese', 'Westside', '555-0456');",
+  "expected_sql": ""
+}
