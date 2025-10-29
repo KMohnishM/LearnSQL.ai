@@ -80,3 +80,4 @@ __pycache__/
 *.key
 
 # End of .gitignore
+.vercel

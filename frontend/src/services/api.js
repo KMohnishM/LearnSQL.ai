@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+// Use production URL for deployment, fallback to localhost for development
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://learn-sql-ai.vercel.app/api'
+  : 'http://localhost:8000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
