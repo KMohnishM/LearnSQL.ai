@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+import logging
 from typing import List
 from app.models import LearningModule, SubmitAnswerRequest, SubmitAnswerResponse
 from app.database import execute_query, execute_insert
@@ -135,7 +136,19 @@ async def get_dynamic_example(request: dict):
         example = await question_service.generate_dynamic_example(command, syntax, category)
         return example
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate example: {str(e)}")
+        # Log the error and return a safe fallback example to avoid 500 responses to the frontend
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to generate dynamic example: {e}")
+
+        # Provide a friendly fallback so the frontend can display a helpful message
+        return {
+            "scenario": "Real-Time Scenario",
+            "business_context": "Unable to generate real-time example at this time.",
+            "table_description": "",
+            "sql_example": syntax or (command or ""),
+            "explanation": "Please try again later or refer to the static example provided.",
+            "sample_data": ""
+        }
 
 async def store_user_attempt(user_id: str, question_id: str, user_sql: str, evaluation: dict):
     """Store user attempt in database"""

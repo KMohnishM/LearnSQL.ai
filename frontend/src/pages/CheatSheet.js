@@ -92,13 +92,13 @@ const CheatSheet = () => {
       analytics.trackDynamicExample(item.command, item.category);
     } catch (error) {
       console.error('Error generating dynamic example:', error);
-      toast.error('Failed to generate dynamic example');
-      setDynamicExample({
-        scenario: "Business Scenario",
-        business_context: "Unable to generate dynamic example at this time.",
-        sql_example: item.example,
-        explanation: "Please try again later or refer to the static example provided."
-      });
+        toast.error('Failed to generate real-time example');
+        setDynamicExample({
+          scenario: "Real-Time Scenario",
+          business_context: "Unable to generate real-time example at this time.",
+          sql_example: item.example,
+          explanation: "Please try again later or refer to the static example provided."
+        });
     } finally {
       setLoadingExample(false);
     }
@@ -220,8 +220,8 @@ const CheatSheet = () => {
                   onClick={() => generateDynamicExample(item)}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors duration-200"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  Generate Business Scenario
+                    <Sparkles className="h-4 w-4" />
+                    Generate Real-Time Scenario
                 </button>
               </div>
             </div>
@@ -242,7 +242,7 @@ const CheatSheet = () => {
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary-500" />
-                Dynamic Business Scenario
+             Dynamic Real-Time Scenario
               </h2>
               <button
                 onClick={closeModal}
@@ -257,7 +257,7 @@ const CheatSheet = () => {
                 <div className="flex items-center justify-center py-12">
                   <div className="text-center">
                     <Loader className="h-8 w-8 animate-spin text-primary-500 mx-auto mb-4" />
-                    <p className="text-gray-600">Generating dynamic business scenario...</p>
+                <p className="text-gray-600">Generating real-time scenario...</p>
                   </div>
                 </div>
               ) : dynamicExample ? (
