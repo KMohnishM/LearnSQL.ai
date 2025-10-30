@@ -99,12 +99,25 @@ class ComprehensiveQuestionService:
 
 You're working as a database developer for an online store. A customer just placed an order but wants to change their delivery address before shipping.
 
-**Your Task:**
-Update the customer's delivery address in the orders table for order_id = 12345. Change the delivery_address to "456 Oak Street, Chicago, IL 60614" and set last_modified to today's date.
-
 **Database Schema:**
-- Table: orders
-- Columns: order_id, customer_id, delivery_address, order_status, last_modified
+```sql
+-- Here's the existing table structure for reference:
+CREATE TABLE orders (
+    order_id INT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    delivery_address VARCHAR(255),
+    order_status ENUM('pending', 'processing', 'shipped', 'delivered'),
+    order_date DATETIME,
+    last_modified DATETIME,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+);
+
+-- Sample existing data:
+-- order_id: 12345, customer_id: 789, delivery_address: "123 Main St, Boston, MA"
+```
+
+**Your Task:**
+The customer with order_id = 12345 needs their delivery address updated to "456 Oak Street, Chicago, IL 60614" and you need to set the last_modified field to today's date.
 
 Write the SQL UPDATE statement to accomplish this business requirement."""
         
@@ -175,21 +188,36 @@ Your solution successfully updates the customer's delivery information, ensuring
 **Topic:** {module_description}
 **Difficulty:** {difficulty}
 
+**CRITICAL: You can include helpful SQL examples for context (table schemas, syntax references) but DO NOT provide the actual solution to the question.**
+
 **Requirements:**
 1. Create a REAL business scenario (e-commerce, healthcare, finance, etc.)
 2. Include business context and why this query matters
-3. Provide clear task description
-4. Include relevant table schema information
-5. Make it practical and realistic - something a developer would actually write
+3. Provide clear task description with specific requirements
+4. Include relevant table schema with CREATE TABLE statements for reference
+5. You MAY include sample data or existing table structure for context
+6. Make it practical and realistic - something a developer would actually write
+7. **DO NOT include the SQL solution that answers the specific question being asked**
 
 **Format your response as:**
 **Business Scenario:** [Company/Industry context]
 **Situation:** [What happened that requires this SQL]
-**Your Task:** [Specific SQL requirement]
-**Database Schema:** [Relevant table/column info]
-**Business Impact:** [Why this matters]
 
-Make it engaging and realistic - avoid academic examples!"""
+**Database Schema:** 
+```sql
+-- You can include CREATE TABLE statements for reference
+CREATE TABLE example_table (
+    id INT PRIMARY KEY,
+    column_name VARCHAR(100)
+);
+-- Sample data context if helpful
+```
+
+**Your Task:** [Specific SQL requirement - what they need to accomplish]
+**Success Criteria:** [What the correct solution should accomplish]
+**Business Impact:** [Why this matters to the business]
+
+**IMPORTANT:** Include helpful context SQL (schemas, sample structures) but NOT the solution SQL that answers the question."""
 
         llm_response = await self._call_llm(prompt, temperature=0.8)
         

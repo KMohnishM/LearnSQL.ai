@@ -6,6 +6,9 @@ from app.database import execute_query_sync as execute_query, execute_insert_syn
 from app.services.simple_question_service import ComprehensiveQuestionService
 import json
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
 router = APIRouter()
 question_service = ComprehensiveQuestionService()
 
@@ -49,7 +52,7 @@ async def evaluate_business_answer(request: dict):
         
         # Store the attempt
         user_id = request.get("user_id", "anonymous")
-        await store_user_attempt(user_id, question_id, user_sql, evaluation)
+        store_user_attempt(user_id, question_id, user_sql, evaluation)
         
         return evaluation
     except Exception as e:
@@ -57,25 +60,113 @@ async def evaluate_business_answer(request: dict):
 
 @router.get("/practice/progress/{user_id}")
 async def get_user_progress(user_id: str):
-    """Get user's progress and generate personalized analysis"""
+    """Get user's progress across all modules - for Practice page display"""
     try:
-        # Get recent attempts
+        logging.info(f"Getting module progress for user: {user_id}")
+        
+        # Get progress by module from user_progress table
+        progress_query = """
+        SELECT 
+            up.module_id,
+            up.questions_attempted,
+            up.questions_correct,
+            up.completion_percentage,
+            up.current_difficulty,
+            lm.name as module_name,
+            lm.description as module_description
+        FROM user_progress up
+        JOIN learning_modules lm ON up.module_id = lm.id
+        WHERE up.user_id = ?
+        ORDER BY lm.order_index
+        """
+        
+        try:
+            # First, get all modules to ensure we show all of them
+            all_modules_query = """
+            SELECT 
+                lm.id as module_id,
+                lm.name as module_name,
+                lm.description as module_description,
+                COALESCE(up.questions_attempted, 0) as questions_attempted,
+                COALESCE(up.questions_correct, 0) as questions_correct,
+                COALESCE(up.completion_percentage, 0.0) as completion_percentage,
+                COALESCE(up.current_difficulty, 'easy') as current_difficulty
+            FROM learning_modules lm
+            LEFT JOIN user_progress up ON lm.id = up.module_id AND up.user_id = %s
+            ORDER BY lm.order_index
+            """
+            progress_data = execute_query(all_modules_query, (user_id,))
+            logging.info(f"Found progress for {len(progress_data)} modules for user {user_id}")
+            return progress_data
+        except Exception as db_error:
+            logging.error(f"Database query failed: {db_error}")
+            # Return empty array if database query fails
+            return []
+            
+    except Exception as e:
+        logging.error(f"Failed to get user progress: {e}")
+        return []
+
+@router.get("/practice/analysis/{user_id}")
+async def get_user_analysis(user_id: str):
+    """Get user's detailed analysis with LLM insights"""
+    try:
+        logging.info(f"Getting analysis for user: {user_id}")
+        
+        # Get recent attempts with extracted module info from dynamic question IDs
         query = """
-        SELECT ua.*, q.module_id, q.difficulty_level
+        SELECT 
+            ua.*,
+            CASE 
+                WHEN ua.question_id LIKE '1_%' THEN 1
+                WHEN ua.question_id LIKE '2_%' THEN 2
+                WHEN ua.question_id LIKE '3_%' THEN 3
+                WHEN ua.question_id LIKE '4_%' THEN 4
+                WHEN ua.question_id LIKE '5_%' THEN 5
+                WHEN ua.question_id LIKE '6_%' THEN 6
+                ELSE 1
+            END as module_id,
+            CASE 
+                WHEN ua.question_id LIKE '%_easy_%' THEN 'easy'
+                WHEN ua.question_id LIKE '%_medium_%' THEN 'medium'
+                WHEN ua.question_id LIKE '%_hard_%' THEN 'hard'
+                ELSE 'medium'
+            END as difficulty_level
         FROM user_attempts ua
-        LEFT JOIN questions q ON ua.question_id = q.id
         WHERE ua.user_id = ?
         ORDER BY ua.created_at DESC
         LIMIT 20
         """
+        
         attempts = execute_query(query, (user_id,))
+        logging.info(f"Found {len(attempts)} attempts for user {user_id}")
         
         # Generate personalized analysis using LLM
-        analysis = await question_service.get_personalized_analysis(user_id, attempts)
-        
-        return analysis
+        try:
+            analysis = await question_service.get_personalized_analysis(user_id, attempts)
+            return analysis
+        except Exception as llm_error:
+            # Fallback to simple progress data if LLM fails
+            logging.warning(f"LLM analysis failed for user {user_id}: {llm_error}")
+            
+            # Return basic progress summary without LLM analysis
+            total_attempts = len(attempts)
+            correct_attempts = sum(1 for a in attempts if a.get('is_correct', False))
+            accuracy = (correct_attempts / total_attempts * 100) if total_attempts > 0 else 0
+            
+            return {
+                "user_id": user_id,
+                "analysis": f"Progress Summary: {total_attempts} questions attempted with {accuracy:.1f}% accuracy. Keep practicing to improve your SQL skills!",
+                "performance_summary": {
+                    "total_questions": total_attempts,
+                    "correct_answers": correct_attempts,
+                    "accuracy_percentage": accuracy,
+                    "modules_practiced": len(set(a.get('module_id') for a in attempts if a.get('module_id')))
+                },
+                "recent_attempts": attempts[:5]  # Last 5 attempts
+            }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get progress: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get analysis: {str(e)}")
 
 @router.get("/practice/progress")
 async def get_default_progress():
@@ -150,25 +241,27 @@ async def get_dynamic_example(request: dict):
             "sample_data": ""
         }
 
-async def store_user_attempt(user_id: str, question_id: str, user_sql: str, evaluation: dict):
+def store_user_attempt(user_id: str, question_id: str, user_sql: str, evaluation: dict):
     """Store user attempt in database and update progress"""
     try:
+        from app.database import execute_query_sync, execute_insert_sync
+        
         # Get attempt number
         attempt_query = """
         SELECT COUNT(*) as count FROM user_attempts 
-        WHERE user_id = ? AND question_id = ?
+        WHERE user_id = %s AND question_id = %s
         """
-        attempt_count = execute_query(attempt_query, (user_id, question_id))
+        attempt_count = execute_query_sync(attempt_query, (user_id, question_id))
         attempt_number = attempt_count[0]["count"] + 1 if attempt_count else 1
         
         # Store the attempt
         insert_attempt_query = """
         INSERT INTO user_attempts 
         (user_id, question_id, user_sql, is_correct, llm_feedback, score, attempt_number)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         
-        execute_insert(
+        execute_insert_sync(
             insert_attempt_query,
             (
                 user_id,
@@ -185,7 +278,7 @@ async def store_user_attempt(user_id: str, question_id: str, user_sql: str, eval
         # Extract module_id from question_id (format: "module_difficulty_random")
         try:
             module_id = int(question_id.split('_')[0])
-            await update_user_progress(user_id, module_id, evaluation.get("is_correct", False))
+            update_user_progress(user_id, module_id, evaluation.get("is_correct", False))
         except (ValueError, IndexError):
             logging.warning(f"Could not extract module_id from question_id: {question_id}")
             
@@ -201,15 +294,17 @@ async def store_user_attempt(user_id: str, question_id: str, user_sql: str, eval
         else:
             raise  # Re-raise other errors
 
-async def update_user_progress(user_id: str, module_id: int, is_correct: bool):
+def update_user_progress(user_id: str, module_id: int, is_correct: bool):
     """Update user progress for a module"""
     try:
+        from app.database import execute_query_sync, execute_insert_sync, execute_update_sync
+        
         # Check if progress record exists
         progress_query = """
         SELECT * FROM user_progress 
-        WHERE user_id = ? AND module_id = ?
+        WHERE user_id = %s AND module_id = %s
         """
-        existing_progress = execute_query(progress_query, (user_id, module_id))
+        existing_progress = execute_query_sync(progress_query, (user_id, module_id))
         
         if existing_progress:
             # Update existing progress
@@ -220,11 +315,10 @@ async def update_user_progress(user_id: str, module_id: int, is_correct: bool):
             
             update_query = """
             UPDATE user_progress 
-            SET questions_attempted = ?, questions_correct = ?, 
-                completion_percentage = ?, last_accessed = CURRENT_TIMESTAMP
-            WHERE user_id = ? AND module_id = ?
+            SET questions_attempted = %s, questions_correct = %s, 
+                completion_percentage = %s, last_accessed = CURRENT_TIMESTAMP
+            WHERE user_id = %s AND module_id = %s
             """
-            from app.database import execute_update_sync
             execute_update_sync(update_query, (new_attempted, new_correct, new_completion, user_id, module_id))
             
         else:
@@ -236,9 +330,9 @@ async def update_user_progress(user_id: str, module_id: int, is_correct: bool):
             insert_query = """
             INSERT INTO user_progress 
             (user_id, module_id, questions_attempted, questions_correct, completion_percentage)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s)
             """
-            execute_insert(insert_query, (user_id, module_id, new_attempted, new_correct, new_completion))
+            execute_insert_sync(insert_query, (user_id, module_id, new_attempted, new_correct, new_completion))
             
         logging.info(f"Updated progress for user {user_id}, module {module_id}")
         

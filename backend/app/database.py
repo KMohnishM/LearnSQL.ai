@@ -1,6 +1,4 @@
 import os
-import asyncpg
-import asyncio
 from typing import Optional, Dict, List, Any
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
@@ -12,96 +10,115 @@ load_dotenv()
 # Get database URL from environment
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:password@localhost:5432/sql_learning')
 
-# SQLAlchemy setup
-engine = create_engine(DATABASE_URL)
+# SQLAlchemy setup - works in both local and Vercel environments
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-async def get_db_connection():
-    """Get an async database connection"""
-    return await asyncpg.connect(DATABASE_URL)
-
-def get_sync_db():
-    """Get a synchronous database session"""
-    db = SessionLocal()
-    try:
-        return db
-    finally:
-        db.close()
-
-async def init_db():
+def init_db():
     """Initialize the database with schema"""
-    conn = await get_db_connection()
-    
     try:
         # Read and execute PostgreSQL schema
         schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "database_postgresql.sql")
+        if not os.path.exists(schema_path):
+            # Fallback to simple schema and convert
+            schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "database_simple.sql")
+        
         with open(schema_path, 'r') as f:
             schema = f.read()
         
-        # Execute each statement separately
-        statements = schema.split(';')
-        for statement in statements:
-            statement = statement.strip()
-            if statement:
-                await conn.execute(statement)
+        # Convert SQLite to PostgreSQL if needed
+        if 'database_simple.sql' in schema_path:
+            schema = schema.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY')
+            schema = schema.replace('DATETIME', 'TIMESTAMP')
+            schema = schema.replace('REAL', 'DECIMAL')
+        
+        # Execute schema using SQLAlchemy
+        with engine.connect() as conn:
+            # Execute each statement separately
+            statements = schema.split(';')
+            for statement in statements:
+                statement = statement.strip()
+                if statement and not statement.startswith('--'):
+                    try:
+                        conn.execute(text(statement))
+                        conn.commit()
+                    except Exception as e:
+                        # Ignore table already exists errors
+                        if 'already exists' not in str(e).lower():
+                            print(f"Warning executing statement: {e}")
         
         print("Database initialized successfully!")
     except Exception as e:
         print(f"Error initializing database: {e}")
-    finally:
-        await conn.close()
 
-async def execute_query(query: str, params: Optional[tuple] = None) -> List[Dict[str, Any]]:
+def execute_query_sync(query: str, params: Optional[tuple] = None) -> List[Dict[str, Any]]:
     """Execute a query and return results"""
-    conn = await get_db_connection()
-    try:
+    with engine.connect() as conn:
         if params:
-            results = await conn.fetch(query, *params)
+            # Convert tuple to dict for SQLAlchemy
+            param_dict = {f'param_{i}': param for i, param in enumerate(params)}
+            # Replace %s or ? with :param_0, :param_1, etc.
+            formatted_query = query
+            for i in range(len(params)):
+                if '%s' in formatted_query:
+                    formatted_query = formatted_query.replace('%s', f':param_{i}', 1)
+                else:
+                    formatted_query = formatted_query.replace('?', f':param_{i}', 1)
+            result = conn.execute(text(formatted_query), param_dict)
         else:
-            results = await conn.fetch(query)
+            result = conn.execute(text(query))
         
-        # Convert asyncpg Records to dictionaries
-        return [dict(row) for row in results]
-    finally:
-        await conn.close()
+        # Convert results to list of dictionaries
+        columns = result.keys() if hasattr(result, 'keys') else []
+        rows = result.fetchall() if hasattr(result, 'fetchall') else []
+        return [dict(zip(columns, row)) for row in rows]
 
-async def execute_insert(query: str, params: tuple) -> int:
+def execute_insert_sync(query: str, params: tuple) -> int:
     """Execute insert and return the last row id"""
-    conn = await get_db_connection()
-    try:
-        # For PostgreSQL, we need to add RETURNING id to get the inserted ID
+    with engine.connect() as conn:
+        # For PostgreSQL, add RETURNING id if not present
         if 'RETURNING' not in query.upper():
             query = query.rstrip(';') + ' RETURNING id'
         
-        result = await conn.fetchrow(query, *params)
-        return result['id'] if result else None
-    finally:
-        await conn.close()
-
-async def execute_update(query: str, params: Optional[tuple] = None) -> int:
-    """Execute update/delete and return affected row count"""
-    conn = await get_db_connection()
-    try:
-        if params:
-            result = await conn.execute(query, *params)
-        else:
-            result = await conn.execute(query)
+        # Convert tuple to dict for SQLAlchemy
+        param_dict = {f'param_{i}': param for i, param in enumerate(params)}
+        # Replace %s or ? with :param_0, :param_1, etc.
+        formatted_query = query
+        for i in range(len(params)):
+            if '%s' in formatted_query:
+                formatted_query = formatted_query.replace('%s', f':param_{i}', 1)
+            else:
+                formatted_query = formatted_query.replace('?', f':param_{i}', 1)
         
-        # Extract row count from result string like "UPDATE 1"
-        return int(result.split()[-1]) if result else 0
-    finally:
-        await conn.close()
-
-# Synchronous wrapper functions for compatibility
-def execute_query_sync(query: str, params: Optional[tuple] = None) -> List[Dict[str, Any]]:
-    """Synchronous wrapper for execute_query"""
-    return asyncio.run(execute_query(query, params))
-
-def execute_insert_sync(query: str, params: tuple) -> int:
-    """Synchronous wrapper for execute_insert"""
-    return asyncio.run(execute_insert(query, params))
+        result = conn.execute(text(formatted_query), param_dict)
+        conn.commit()
+        
+        # Get the returned ID
+        row = result.fetchone()
+        return row[0] if row else None
 
 def execute_update_sync(query: str, params: Optional[tuple] = None) -> int:
-    """Synchronous wrapper for execute_update"""
-    return asyncio.run(execute_update(query, params))
+    """Execute update/delete and return affected row count"""
+    with engine.connect() as conn:
+        if params:
+            # Convert tuple to dict for SQLAlchemy
+            param_dict = {f'param_{i}': param for i, param in enumerate(params)}
+            # Replace %s or ? with :param_0, :param_1, etc.
+            formatted_query = query
+            for i in range(len(params)):
+                if '%s' in formatted_query:
+                    formatted_query = formatted_query.replace('%s', f':param_{i}', 1)
+                else:
+                    formatted_query = formatted_query.replace('?', f':param_{i}', 1)
+            result = conn.execute(text(formatted_query), param_dict)
+        else:
+            result = conn.execute(text(query))
+        
+        conn.commit()
+        return result.rowcount
+
+# Aliases for compatibility
+execute_query = execute_query_sync
+execute_insert = execute_insert_sync
+execute_update = execute_update_sync

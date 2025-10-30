@@ -177,9 +177,10 @@ ORDER BY total_spent DESC;""",
                 "module_name": module_name,
                 "difficulty": difficulty,
                 "question": selected["question"],
-                "expected_sql": selected.get("expected_sql", ""),
                 "hints": selected.get("hints", []),
-                "created_at": "now"
+                "created_at": "now",
+                # Store expected_sql internally for evaluation but don't send to frontend
+                "_expected_sql": selected.get("expected_sql", "")
             }
             
         except Exception as e:

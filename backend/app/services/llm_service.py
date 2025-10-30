@@ -216,11 +216,12 @@ DIFFICULTY LEVELS:
 
 Return JSON with:
 {{
-  "question_text": "Detailed business scenario with specific requirements and table context",
-  "expected_sql": "Working SQL solution that solves the business problem",
+  "question_text": "Detailed business scenario with table schemas and context. Include CREATE TABLE statements and sample data for reference, but DO NOT include the SQL solution that answers the specific question",
   "hints": ["Business-focused hint", "Technical hint", "Best practice hint"],
-  "table_context": "Brief description of relevant table structures"
+  "table_context": "CREATE TABLE statements and sample data for context"
 }}
+
+CRITICAL: You CAN include helpful SQL for context (table schemas, sample structures) but DO NOT include the actual solution SQL that answers the question being asked.
 
 Example of GOOD question:
 "Your e-commerce company needs to identify customers who placed orders over $500 in the last 30 days but haven't made a purchase since. The marketing team wants to send them a 'we miss you' email campaign. Write a query using the customers (id, email, name, registration_date) and orders (id, customer_id, order_date, total_amount) tables."

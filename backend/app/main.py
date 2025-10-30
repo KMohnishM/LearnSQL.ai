@@ -38,7 +38,7 @@ async def health_check():
 async def startup_event():
     """Initialize database on startup"""
     try:
-        await init_db()
+        init_db()
         print("Database initialized successfully!")
     except Exception as e:
         print(f"Database initialization error: {e}")
