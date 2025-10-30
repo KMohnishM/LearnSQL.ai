@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.models import UserAnalytics
-from app.database import execute_query
+from app.database import execute_query_sync as execute_query
 from typing import List, Dict, Any
 
 router = APIRouter()
@@ -58,7 +58,7 @@ async def get_user_analytics(user_id: str):
     """
     modules_progress = execute_query(modules_query, (user_id,))
     
-    # Get recent attempts
+    # Get recent attempts (modified to work with dynamic questions)
     recent_query = """
     SELECT 
         ua.created_at,
@@ -66,11 +66,17 @@ async def get_user_analytics(user_id: str):
         ua.is_correct,
         ua.score,
         ua.llm_feedback,
-        q.question_text,
-        lm.name as module_name
+        ua.question_id,
+        CASE 
+            WHEN ua.question_id LIKE '1_%' THEN 'Data Definition and Data Manipulation Language'
+            WHEN ua.question_id LIKE '2_%' THEN 'Constraints and Database Integrity'
+            WHEN ua.question_id LIKE '3_%' THEN 'Single Row Functions'
+            WHEN ua.question_id LIKE '4_%' THEN 'Operators and Group Functions'
+            WHEN ua.question_id LIKE '5_%' THEN 'Subqueries, Views and Joins'
+            WHEN ua.question_id LIKE '6_%' THEN 'High-Level Language Extensions'
+            ELSE 'Unknown Module'
+        END as module_name
     FROM user_attempts ua
-    JOIN questions q ON ua.question_id = q.id
-    JOIN learning_modules lm ON q.module_id = lm.id
     WHERE ua.user_id = ?
     ORDER BY ua.created_at DESC
     LIMIT 10
@@ -110,17 +116,26 @@ async def get_detailed_analytics(user_id: str):
     """
     performance_data = execute_query(performance_query, (user_id,))
     
-    # Difficulty distribution
+    # Difficulty distribution (extract from dynamic question_id)
     difficulty_query = """
     SELECT 
-        q.difficulty_level,
+        CASE 
+            WHEN ua.question_id LIKE '%_easy_%' THEN 'easy'
+            WHEN ua.question_id LIKE '%_medium_%' THEN 'medium'
+            WHEN ua.question_id LIKE '%_hard_%' THEN 'hard'
+            ELSE 'unknown'
+        END as difficulty_level,
         COUNT(*) as attempts,
         AVG(ua.score) as avg_score,
         SUM(CASE WHEN ua.is_correct THEN 1 ELSE 0 END) as correct
     FROM user_attempts ua
-    JOIN questions q ON ua.question_id = q.id
     WHERE ua.user_id = ?
-    GROUP BY q.difficulty_level
+    GROUP BY CASE 
+        WHEN ua.question_id LIKE '%_easy_%' THEN 'easy'
+        WHEN ua.question_id LIKE '%_medium_%' THEN 'medium'
+        WHEN ua.question_id LIKE '%_hard_%' THEN 'hard'
+        ELSE 'unknown'
+    END
     """
     difficulty_data = execute_query(difficulty_query, (user_id,))
     

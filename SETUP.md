@@ -31,6 +31,8 @@ copy .env.example .env
 Then edit `.env` and add your OpenRouter API key:
 ```
 OPENROUTER_API_KEY=your_actual_api_key_here
+OPENROUTER_MODEL=meta-llama/llama-3.3-8b-instruct:free
+GEMINI_API_KEY=your_gemini_api_key_here
 DATABASE_URL=sqlite:///./sql_learning.db
 ```
 

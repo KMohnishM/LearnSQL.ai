@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from app.models import LearningModule, Question, SubmitAnswerRequest, SubmitAnswerResponse
-from app.database import execute_query, execute_insert
+from app.database import execute_query_sync as execute_query, execute_insert_sync as execute_insert
 from app.services.simple_question_service import ComprehensiveQuestionService
 import json
 

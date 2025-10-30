@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 import logging
 from typing import List
 from app.models import LearningModule, SubmitAnswerRequest, SubmitAnswerResponse
-from app.database import execute_query, execute_insert
+from app.database import execute_query_sync as execute_query, execute_insert_sync as execute_insert
 from app.services.simple_question_service import ComprehensiveQuestionService
 import json
 
@@ -151,7 +151,7 @@ async def get_dynamic_example(request: dict):
         }
 
 async def store_user_attempt(user_id: str, question_id: str, user_sql: str, evaluation: dict):
-    """Store user attempt in database"""
+    """Store user attempt in database and update progress"""
     try:
         # Get attempt number
         attempt_query = """
@@ -180,5 +180,67 @@ async def store_user_attempt(user_id: str, question_id: str, user_sql: str, eval
                 attempt_number
             )
         )
+        
+        # Update user progress for the module
+        # Extract module_id from question_id (format: "module_difficulty_random")
+        try:
+            module_id = int(question_id.split('_')[0])
+            await update_user_progress(user_id, module_id, evaluation.get("is_correct", False))
+        except (ValueError, IndexError):
+            logging.warning(f"Could not extract module_id from question_id: {question_id}")
+            
+        logging.info(f"Stored attempt for user {user_id}, question {question_id}, correct: {evaluation.get('is_correct', False)}")
+        
     except Exception as e:
-        print(f"Error storing attempt: {e}")
+        logging.error(f"Error storing attempt (production DB readonly): {e}")
+        # In production, gracefully handle readonly database by not failing the request
+        # Users can still get LLM feedback even if storage fails
+        if "readonly database" in str(e).lower() or "attempt to write" in str(e).lower():
+            logging.warning(f"Database readonly in production - storage skipped for user {user_id}")
+            return  # Don't raise, let the evaluation response succeed
+        else:
+            raise  # Re-raise other errors
+
+async def update_user_progress(user_id: str, module_id: int, is_correct: bool):
+    """Update user progress for a module"""
+    try:
+        # Check if progress record exists
+        progress_query = """
+        SELECT * FROM user_progress 
+        WHERE user_id = ? AND module_id = ?
+        """
+        existing_progress = execute_query(progress_query, (user_id, module_id))
+        
+        if existing_progress:
+            # Update existing progress
+            current = existing_progress[0]
+            new_attempted = current["questions_attempted"] + 1
+            new_correct = current["questions_correct"] + (1 if is_correct else 0)
+            new_completion = min(100.0, (new_correct / new_attempted) * 100)
+            
+            update_query = """
+            UPDATE user_progress 
+            SET questions_attempted = ?, questions_correct = ?, 
+                completion_percentage = ?, last_accessed = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND module_id = ?
+            """
+            from app.database import execute_update_sync
+            execute_update_sync(update_query, (new_attempted, new_correct, new_completion, user_id, module_id))
+            
+        else:
+            # Create new progress record
+            new_attempted = 1
+            new_correct = 1 if is_correct else 0
+            new_completion = new_correct / new_attempted * 100
+            
+            insert_query = """
+            INSERT INTO user_progress 
+            (user_id, module_id, questions_attempted, questions_correct, completion_percentage)
+            VALUES (?, ?, ?, ?, ?)
+            """
+            execute_insert(insert_query, (user_id, module_id, new_attempted, new_correct, new_completion))
+            
+        logging.info(f"Updated progress for user {user_id}, module {module_id}")
+        
+    except Exception as e:
+        logging.error(f"Error updating user progress: {e}")

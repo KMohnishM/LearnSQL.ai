@@ -9,7 +9,15 @@ import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 
 const Analysis = () => {
-  const [userId] = useState('user_123');
+  // Generate unique user ID per session  
+  const [userId] = useState(() => {
+    let storedUserId = localStorage.getItem('sql_learning_user_id');
+    if (!storedUserId) {
+      storedUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('sql_learning_user_id', storedUserId);
+    }
+    return storedUserId;
+  });
   const [analytics, setAnalytics] = useState(null);
   const [detailedAnalytics, setDetailedAnalytics] = useState(null);
   const [suggestions, setSuggestions] = useState(null);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, BookOpen, Award, ChevronRight } from 'lucide-react';
 import { apiService } from '../services/api';
+import { userSession } from '../services/userSession';
 import toast from 'react-hot-toast';
 
 const Practice = () => {
@@ -9,7 +10,8 @@ const Practice = () => {
   const [modules, setModules] = useState([]);
   const [userProgress, setUserProgress] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userId] = useState('user_123'); // Simple user ID for demo
+  // Get unique user ID for this browser session
+  const [userId] = useState(() => userSession.getUserId());
 
   useEffect(() => {
     fetchData();

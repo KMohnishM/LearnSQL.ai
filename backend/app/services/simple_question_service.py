@@ -15,6 +15,12 @@ class ComprehensiveQuestionService:
     def __init__(self):
         self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
         self.openrouter_base_url = "https://openrouter.ai/api/v1"
+        # Model name can be configured via environment variable for flexibility
+        self.openrouter_model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-8b-instruct:free")
+        
+        # Gemini fallback configuration
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
+        self.gemini_base_url = "https://generativelanguage.googleapis.com/v1beta"
         
         # Simple module definitions - LLM generates everything else
         self.modules = {
@@ -51,35 +57,39 @@ class ComprehensiveQuestionService:
         }
     
     async def _call_llm(self, prompt: str, temperature: float = 0.7) -> str:
-        """Call LLM with fallback to local response"""
-        if not self.openrouter_api_key:
-            return await self._fallback_response(prompt)
-        
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    f"{self.openrouter_base_url}/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {self.openrouter_api_key}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "meta-llama/llama-3.3-8b-instruct:free",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": temperature,
-                        "max_tokens": 2000
-                    }
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    return result["choices"][0]["message"]["content"]
-                else:
-                    logger.warning(f"LLM API failed with status {response.status_code}")
-                    return await self._fallback_response(prompt)
+        """Call LLM with fallback to Gemini, then local response"""
+        # Try OpenRouter first
+        if self.openrouter_api_key:
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(
+                        f"{self.openrouter_base_url}/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {self.openrouter_api_key}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": self.openrouter_model,
+                            "messages": [{"role": "user", "content": prompt}],
+                            "temperature": temperature,
+                            "max_tokens": 2000
+                        }
+                    )
                     
+                    if response.status_code == 200:
+                        result = response.json()
+                        return result["choices"][0]["message"]["content"]
+                    else:
+                        logger.warning(f"OpenRouter API failed with status {response.status_code}, trying Gemini fallback")
+                        
+            except Exception as e:
+                logger.error(f"OpenRouter call failed: {e}, trying Gemini fallback")
+        
+        # Try Gemini fallback
+        try:
+            return await self._call_gemini(prompt, temperature)
         except Exception as e:
-            logger.error(f"LLM call failed: {e}")
+            logger.error(f"Gemini fallback failed: {e}, using local fallback")
             return await self._fallback_response(prompt)
     
     async def _fallback_response(self, prompt: str) -> str:
@@ -116,6 +126,42 @@ Write the SQL UPDATE statement to accomplish this business requirement."""
 Your solution successfully updates the customer's delivery information, ensuring accurate order fulfillment and customer satisfaction."""
         
         return "I'm processing your request. Please try again."
+    
+    async def _call_gemini(self, prompt: str, temperature: float = 0.7) -> str:
+        """Call Google Gemini 2.0 Flash as fallback"""
+        if not self.gemini_api_key:
+            raise Exception("No Gemini API key available")
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{self.gemini_base_url}/models/gemini-2.0-flash-exp:generateContent?key={self.gemini_api_key}",
+                    headers={
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "contents": [{
+                            "parts": [{
+                                "text": prompt
+                            }]
+                        }],
+                        "generationConfig": {
+                            "temperature": temperature,
+                            "maxOutputTokens": 2000
+                        }
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result["candidates"][0]["content"]["parts"][0]["text"]
+                else:
+                    logger.error(f"Gemini API failed with status {response.status_code}: {response.text}")
+                    raise Exception(f"Gemini API error: {response.status_code}")
+                    
+        except Exception as e:
+            logger.error(f"Gemini API call failed: {e}")
+            raise
     
     async def get_business_question(self, module_id: str, difficulty: str = "easy") -> Dict[str, Any]:
         """Generate a business scenario question using LLM"""

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from typing import List
 from app.models import CheatSheetEntry
-from app.database import execute_query
+from app.database import execute_query_sync as execute_query
 
 router = APIRouter()
 

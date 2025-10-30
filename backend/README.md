@@ -506,6 +506,13 @@ The application uses OpenRouter API with the following model:
 - **Temperature**: Varies by use case (0.7 for creative content, 0.3 for evaluation)
 - **Max Tokens**: 2000
 
+The model is configurable via environment variable `OPENROUTER_MODEL`. If not set, the default used by the application is `meta-llama/llama-3.3-8b-instruct:free`.
+
+**Fallback System**: The application includes a robust fallback system:
+1. **Primary**: OpenRouter API with configurable model
+2. **Fallback**: Google Gemini 2.0 Flash (requires `GEMINI_API_KEY`)
+3. **Final Fallback**: Local static responses for basic functionality
+
 ### Use Cases
 1. **Question Generation**: Creates realistic business scenario questions
 2. **Answer Evaluation**: Provides detailed feedback on SQL queries
@@ -544,6 +551,8 @@ curl http://localhost:8000/api/cheatsheet
 ```bash
 # Required
 OPENROUTER_API_KEY=your_production_api_key
+OPENROUTER_MODEL=meta-llama/llama-3.3-8b-instruct:free  # optional, override model if needed
+GEMINI_API_KEY=your_gemini_api_key_here  # optional, fallback LLM
 
 # Optional
 DATABASE_URL=sqlite:///production.db

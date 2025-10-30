@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from app.database import execute_query, execute_insert
+from app.database import execute_query_sync as execute_query, execute_insert_sync as execute_insert
 from app.services.llm_service import LLMService
 import json
 import random

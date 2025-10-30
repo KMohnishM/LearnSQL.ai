@@ -12,7 +12,15 @@ import toast from 'react-hot-toast';
 const PracticeModule = () => {
   const { moduleId } = useParams();
   const navigate = useNavigate();
-  const [userId] = useState('user_123');
+  // Generate unique user ID per session
+  const [userId] = useState(() => {
+    let storedUserId = localStorage.getItem('sql_learning_user_id');
+    if (!storedUserId) {
+      storedUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('sql_learning_user_id', storedUserId);
+    }
+    return storedUserId;
+  });
   const { updateContext } = useChatbotContext();
   
   const [module, setModule] = useState(null);

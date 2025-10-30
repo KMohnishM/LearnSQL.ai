@@ -1,15 +1,23 @@
 import os
 import httpx
 import json
+import logging
 from typing import Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 class LLMService:
     def __init__(self):
         self.api_key = os.getenv("OPENROUTER_API_KEY")
         self.base_url = "https://openrouter.ai/api/v1"
+        # Configurable model name (set OPENROUTER_MODEL in .env to override)
+        self.model_name = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-8b-instruct:free")
+        
+        # Gemini fallback configuration
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
+        self.gemini_base_url = "https://generativelanguage.googleapis.com/v1beta"
         
     async def evaluate_sql_answer(self, question: str, user_sql: str, expected_sql: str = None) -> Dict[str, Any]:
         """
@@ -56,7 +64,7 @@ Be encouraging and educational in your feedback.
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "meta-llama/llama-3.3-8b-instruct:free",
+                        "model": self.model_name,
                         "messages": [
                             {
                                 "role": "system",
@@ -88,21 +96,34 @@ Be encouraging and educational in your feedback.
                             "score": 0.0
                         }
                 else:
-                    return {
-                        "is_correct": False,
-                        "feedback": "Error connecting to evaluation service. Please try again.",
-                        "correct_sql": user_sql,
-                        "score": 0.0
-                    }
+                    logger.warning(f"OpenRouter API failed with status {response.status_code}, trying Gemini fallback")
+                    # Try Gemini fallback
+                    try:
+                        gemini_response = await self._call_gemini_for_evaluation(prompt)
+                        return gemini_response
+                    except Exception as gemini_error:
+                        logger.error(f"Gemini fallback failed: {gemini_error}")
+                        return {
+                            "is_correct": False,
+                            "feedback": "Error connecting to evaluation service. Please try again.",
+                            "correct_sql": user_sql,
+                            "score": 0.0
+                        }
                     
         except Exception as e:
-            print(f"LLM Service Error: {e}")
-            return {
-                "is_correct": False,
-                "feedback": "Error evaluating your answer. Please try again.",
-                "correct_sql": user_sql,
-                "score": 0.0
-            }
+            print(f"OpenRouter Service Error: {e}, trying Gemini fallback")
+            # Try Gemini fallback
+            try:
+                gemini_response = await self._call_gemini_for_evaluation(prompt)
+                return gemini_response
+            except Exception as gemini_error:
+                logger.error(f"Gemini fallback failed: {gemini_error}")
+                return {
+                    "is_correct": False,
+                    "feedback": "Error evaluating your answer. Please try again.",
+                    "correct_sql": user_sql,
+                    "score": 0.0
+                }
     
     async def generate_question(self, module_name: str, difficulty: str) -> Dict[str, str]:
         """
@@ -217,7 +238,7 @@ Example of BAD question:
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "meta-llama/llama-3.3-8b-instruct:free",
+                        "model": self.model_name,
                         "messages": [
                             {
                                 "role": "system",
@@ -293,7 +314,7 @@ Focus only on syntax validation, not logic or performance.
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "meta-llama/llama-3.3-8b-instruct:free",
+                        "model": self.model_name,
                         "messages": [
                             {
                                 "role": "system",
@@ -349,7 +370,7 @@ Focus only on syntax validation, not logic or performance.
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "meta-llama/llama-3.3-8b-instruct:free",
+                        "model": self.model_name,
                         "messages": [
                             {
                                 "role": "system",
@@ -378,3 +399,51 @@ Focus only on syntax validation, not logic or performance.
         except Exception as e:
             print(f"LLM Request Error: {e}")
             return {"error": str(e)}
+
+    async def _call_gemini_for_evaluation(self, prompt: str) -> Dict[str, Any]:
+        """Call Gemini for SQL evaluation with JSON parsing"""
+        if not self.gemini_api_key:
+            raise Exception("No Gemini API key available")
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{self.gemini_base_url}/models/gemini-2.0-flash-exp:generateContent?key={self.gemini_api_key}",
+                    headers={
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "contents": [{
+                            "parts": [{
+                                "text": prompt
+                            }]
+                        }],
+                        "generationConfig": {
+                            "temperature": 0.3,
+                            "maxOutputTokens": 2000
+                        }
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    content = result["candidates"][0]["content"]["parts"][0]["text"]
+                    
+                    # Try to parse JSON from the response
+                    try:
+                        evaluation = json.loads(content)
+                        return evaluation
+                    except json.JSONDecodeError:
+                        # Fallback if JSON parsing fails
+                        return {
+                            "is_correct": False,
+                            "feedback": "Sorry, I couldn't evaluate your answer right now. Please try again.",
+                            "correct_sql": "",
+                            "score": 0.0
+                        }
+                else:
+                    raise Exception(f"Gemini API error: {response.status_code}")
+                    
+        except Exception as e:
+            logger.error(f"Gemini evaluation call failed: {e}")
+            raise

@@ -24,8 +24,10 @@ A comprehensive, personalized SQL learning platform with interactive practice mo
 
 ### Backend
 - **FastAPI** - Modern, high-performance Python web framework
-- **SQLite** - Lightweight database for data persistence
+- **PostgreSQL** - Production-ready relational database with asyncpg
+- **SQLAlchemy** - Database ORM with async support
 - **OpenRouter API** - Advanced LLM integration (meta-llama/llama-3.3-8b-instruct)
+- **Gemini 2.0 Flash** - Fallback LLM for enhanced reliability
 - **Pydantic** - Data validation and serialization
 
 ### Frontend
@@ -148,25 +150,49 @@ The platform offers 6 comprehensive modules designed to take you from SQL beginn
    pip install -r requirements.txt
    ```
 
-4. **Environment configuration**
-   ```bash
-   # Copy the example environment file
-   cp .env.example .env
+4. **Database Setup (PostgreSQL Recommended)**
    
-   # Edit .env and add your OpenRouter API key
-   OPENROUTER_API_KEY=your_api_key_here
-   ```
+   **Option A: Supabase (Recommended for Production)**
+   - Create account at https://supabase.com
+   - Create new project and get connection string
+   
+   **Option B: Local PostgreSQL**
+   - Install PostgreSQL locally
+   - Create database: `createdb sql_learning`
+   
+   **Option C: Other Cloud PostgreSQL**
+   - Neon.tech (generous free tier)
+   - Railway.app or ElephantSQL
 
-5. **Initialize database**
+5. **Environment configuration**
    ```bash
-   python -c "from app.database import init_db; init_db()"
+   # Edit backend/.env and configure:
+   
+   # Database (PostgreSQL recommended)
+   DATABASE_URL=postgresql://username:password@localhost:5432/sql_learning
+   # OR use your Supabase/cloud connection string
+   
+   # LLM API Keys
+   OPENROUTER_API_KEY=your_api_key_here
+   OPENROUTER_MODEL=meta-llama/llama-3.3-8b-instruct:free
+   GEMINI_API_KEY=your_gemini_api_key_here
+   
+   ENVIRONMENT=production
    ```
 
-6. **Start the backend server**
+6. **Initialize database**
+   ```bash
+   # Database will auto-initialize on first startup
+   # Or manually run: python -c "import asyncio; from app.database import init_db; asyncio.run(init_db())"
+   ```
+
+7. **Start the backend server**
    ```bash
    uvicorn app.main:app --reload
    ```
    The API will be available at `http://localhost:8000`
+   
+   **Note:** See `POSTGRESQL_MIGRATION.md` for detailed database setup guide.
 
 ### Frontend Setup
 
@@ -261,6 +287,8 @@ pip install -r requirements.txt
 
 # Set production environment variables
 export OPENROUTER_API_KEY=your_production_key
+export OPENROUTER_MODEL=meta-llama/llama-3.3-8b-instruct:free
+export GEMINI_API_KEY=your_gemini_production_key
 
 # Run with Gunicorn
 pip install gunicorn
