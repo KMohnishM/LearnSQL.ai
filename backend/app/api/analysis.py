@@ -101,23 +101,24 @@ async def get_user_analytics(user_id: str):
 async def get_detailed_analytics(user_id: str):
     """Get detailed analytics with charts and insights"""
     
-    # Performance over time
-    performance_query = """
-    SELECT 
-        DATE(created_at) as date,
-        AVG(score) as avg_score,
-        COUNT(*) as attempts,
-        SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) as correct
-    FROM user_attempts 
-    WHERE user_id = ?
-    GROUP BY DATE(created_at)
-    ORDER BY date DESC
-    LIMIT 30
-    """
-    performance_data = execute_query(performance_query, (user_id,))
-    
-    # Difficulty distribution (extract from dynamic question_id)
-    difficulty_query = """
+    try:
+        # Performance over time
+        performance_query = """
+        SELECT 
+            created_at::date as date,
+            AVG(score) as avg_score,
+            COUNT(*) as attempts,
+            SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) as correct
+        FROM user_attempts 
+        WHERE user_id = ?
+        GROUP BY created_at::date
+        ORDER BY date DESC
+        LIMIT 30
+        """
+        performance_data = execute_query(performance_query, (user_id,))
+        
+        # Difficulty distribution (extract from dynamic question_id)
+        difficulty_query = """
     SELECT 
         CASE 
             WHEN ua.question_id LIKE '%_easy_%' THEN 'easy'
@@ -136,27 +137,30 @@ async def get_detailed_analytics(user_id: str):
         WHEN ua.question_id LIKE '%_hard_%' THEN 'hard'
         ELSE 'unknown'
     END
-    """
-    difficulty_data = execute_query(difficulty_query, (user_id,))
-    
-    # Common mistakes
-    mistakes_query = """
+        """
+        difficulty_data = execute_query(difficulty_query, (user_id,))
+        
+        # Common mistakes
+        mistakes_query = """
     SELECT 
         ua.llm_feedback,
         COUNT(*) as frequency
     FROM user_attempts ua
-    WHERE ua.user_id = ? AND ua.is_correct = 0
+    WHERE ua.user_id = ? AND ua.is_correct = false
     GROUP BY ua.llm_feedback
     ORDER BY frequency DESC
     LIMIT 5
     """
-    common_mistakes = execute_query(mistakes_query, (user_id,))
-    
-    return {
-        "performance_over_time": performance_data,
-        "difficulty_distribution": difficulty_data,
-        "common_mistakes": common_mistakes
-    }
+        common_mistakes = execute_query(mistakes_query, (user_id,))
+        
+        return {
+            "performance_over_time": performance_data,
+            "difficulty_distribution": difficulty_data,
+            "common_mistakes": common_mistakes
+        }
+    except Exception as e:
+        print(f"Error in detailed analytics for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving detailed analytics: {str(e)}")
 
 @router.get("/analysis/{user_id}/learning-path")
 async def get_learning_path_suggestions(user_id: str):

@@ -17,6 +17,8 @@ const FloatingChatbot = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
+  const [attention, setAttention] = useState(true);
+  const [showBadge, setShowBadge] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -26,6 +28,41 @@ const FloatingChatbot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Briefly draw attention to the chat button on first load
+  useEffect(() => {
+    // leave attention on for a short period so users notice the button
+    const t = setTimeout(() => setAttention(false), 6000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // One-time onboarding toast + badge for new visitors
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('learnsql_chatbot_seen');
+      if (!seen) {
+        setShowBadge(true);
+        toast((t) => (
+          <div className="flex items-center gap-3">
+            <div className="flex-1 text-sm">Need help with SQL? Click the assistant — it can explain concepts and help with practice.</div>
+            <button
+              onClick={() => {
+                setIsOpen(true);
+                setShowBadge(false);
+                localStorage.setItem('learnsql_chatbot_seen', '1');
+                toast.dismiss(t.id);
+              }}
+              className="ml-2 bg-white text-primary-700 rounded px-2 py-1 text-xs"
+            >
+              Open
+            </button>
+          </div>
+        ), { duration: 9000 });
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, []);
 
   useEffect(() => {
     // Add welcome message when chatbot opens for the first time
@@ -209,13 +246,49 @@ const FloatingChatbot = () => {
   if (!isOpen) {
     return (
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-full p-3 sm:p-4 shadow-lg transition-all duration-200 hover:scale-105 touch-manipulation"
-          title="SQL Learning Assistant"
-        >
-          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-        </button>
+        <div className="flex items-center space-x-2">
+          {/* Mobile / small screens: icon-only (hidden on sm and up) */}
+          <div className="relative sm:hidden">
+            <button
+              onClick={() => {
+                setIsOpen(true);
+                try { localStorage.setItem('learnsql_chatbot_seen', '1'); } catch(e) {}
+                setShowBadge(false);
+              }}
+              className={`bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-full p-3 shadow-lg transition-all duration-200 touch-manipulation ${
+                attention ? 'ring-4 ring-primary-400/30 animate-pulse hover:scale-105' : 'hover:scale-105'
+              }`}
+              title="SQL Learning Assistant"
+              aria-label="Open SQL Assistant"
+            >
+              <MessageCircle className={`h-5 w-5 ${attention ? 'animate-bounce' : ''}`} />
+            </button>
+            {showBadge && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">New</span>
+            )}
+          </div>
+
+          {/* Desktop: pill with icon (hidden on small screens) */}
+          <div className="relative hidden sm:inline-block">
+            <button
+              onClick={() => {
+                setIsOpen(true);
+                try { localStorage.setItem('learnsql_chatbot_seen', '1'); } catch(e) {}
+                setShowBadge(false);
+              }}
+              className={`inline-flex items-center gap-2 bg-primary-600 text-white rounded-full px-3 py-2 text-sm shadow-lg transition-transform ${
+                attention ? 'ring-4 ring-primary-400/30 animate-pulse hover:scale-105' : 'hover:scale-105'
+              }`}
+              aria-label="Open SQL Assistant"
+            >
+              <MessageCircle className={`h-4 w-4 opacity-90 ${attention ? 'animate-bounce' : ''}`} />
+              <span className="font-medium">Ask SQL</span>
+            </button>
+            {showBadge && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1 rounded-full">New</span>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
