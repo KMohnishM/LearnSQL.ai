@@ -94,51 +94,49 @@ const Practice = () => {
         </div>
 
         {/* Progress Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="card">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
             <div className="flex items-center">
-              <div className="p-2 sm:p-3 rounded-full bg-primary-100">
-                <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-primary-600" />
+              <div className="p-2 rounded-full bg-primary-100 flex-shrink-0">
+                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600" />
               </div>
-              <div className="ml-3 sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Modules Started</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                  {Array.isArray(userProgress) ? userProgress.length : 0} / {Array.isArray(modules) ? modules.length : 0}
+              <div className="ml-3 min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">Modules Started</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">
+                  {Array.isArray(userProgress) ? userProgress.filter(p => p.questions_attempted > 0).length : 0} / {Array.isArray(modules) ? modules.length : 0}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="card">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
             <div className="flex items-center">
-              <div className="p-2 sm:p-3 rounded-full bg-green-100">
-                <Award className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+              <div className="p-2 rounded-full bg-green-100 flex-shrink-0">
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
               </div>
-              <div className="ml-3 sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Questions Correct</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+              <div className="ml-3 min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">Questions Correct</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">
                   {Array.isArray(userProgress) ? userProgress.reduce((sum, p) => sum + (p.questions_correct || 0), 0) : 0}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="card">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 col-span-2 lg:col-span-1">
             <div className="flex items-center">
-              <div className="p-2 sm:p-3 rounded-full bg-blue-100">
-                <Play className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+              <div className="p-2 rounded-full bg-blue-100 flex-shrink-0">
+                <Play className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               </div>
-              <div className="ml-3 sm:ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Attempts</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+              <div className="ml-3 min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">Total Attempts</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">
                   {Array.isArray(userProgress) ? userProgress.reduce((sum, p) => sum + (p.questions_attempted || 0), 0) : 0}
                 </p>
               </div>
             </div>
           </div>
-      </div>
-
-        {/* Learning Modules */}
+        </div>        {/* Learning Modules */}
         <div className="space-y-4 sm:space-y-6">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Learning Modules</h2>
           
@@ -148,11 +146,64 @@ const Practice = () => {
               const isStarted = progress.questions_attempted > 0;
               
               return (
-                <div key={module.id} className="card hover:shadow-lg transition-shadow duration-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-3 mb-3">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{module.name}</h3>
+                <div key={module.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200">
+                  {/* Mobile Layout - Stack everything vertically */}
+                  <div className="flex flex-col gap-4 sm:hidden">
+                    {/* Header Section */}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="text-lg font-semibold text-gray-900 flex-1">{module.name}</h3>
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getModuleDifficultyColor(module.difficulty_level)}`}>
+                            {module.difficulty_level}
+                          </span>
+                          {isStarted && (
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(progress.current_difficulty)}`}>
+                              Current: {progress.current_difficulty}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-gray-600 leading-relaxed">{module.description}</p>
+                    </div>
+                    
+                    {/* Progress Section */}
+                    {isStarted && (
+                      <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600 font-medium">Progress</span>
+                          <span className="text-primary-600 font-semibold">{progress.completion_percentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress.completion_percentage}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>{progress.questions_attempted} questions attempted</span>
+                          <span>{progress.questions_correct} correct</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Action Button - Full width on mobile */}
+                    <button
+                      onClick={() => startPractice(module.id)}
+                      className="w-full btn-primary flex items-center justify-center space-x-2 touch-manipulation"
+                    >
+                      <Play className="h-4 w-4" />
+                      <span>{isStarted ? 'Continue Practice' : 'Start Module'}</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Desktop Layout - Better positioning */}
+                  <div className="hidden sm:flex sm:items-start sm:justify-between sm:gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <h3 className="text-xl font-semibold text-gray-900">{module.name}</h3>
                         <div className="flex flex-wrap gap-2">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getModuleDifficultyColor(module.difficulty_level)}`}>
                             {module.difficulty_level}
@@ -165,36 +216,40 @@ const Practice = () => {
                         </div>
                       </div>
                       
-                      <p className="text-sm sm:text-base text-gray-600 mb-4">{module.description}</p>
+                      <p className="text-base text-gray-600 leading-relaxed mb-4">{module.description}</p>
                     
-                    {isStarted && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm text-gray-500">
-                          <span>Progress</span>
-                          <span>{progress.completion_percentage.toFixed(1)}%</span>
+                      {/* Desktop Progress Section */}
+                      {isStarted && (
+                        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600 font-medium">Progress</span>
+                            <span className="text-primary-600 font-semibold">{progress.completion_percentage.toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${progress.completion_percentage}%` }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-sm text-gray-500">
+                            <span>{progress.questions_attempted} questions attempted</span>
+                            <span>{progress.questions_correct} correct</span>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${progress.completion_percentage}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-500">
-                          <span>{progress.questions_attempted} questions attempted</span>
-                          <span>{progress.questions_correct} correct</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
                     
-                    <button
-                      onClick={() => startPractice(module.id)}
-                      className="w-full sm:w-auto sm:ml-6 btn-primary flex items-center justify-center space-x-2 touch-manipulation"
-                    >
-                      <Play className="h-4 w-4" />
-                      <span>{isStarted ? 'Continue' : 'Start'}</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
+                    {/* Desktop Action Button - Auto width */}
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => startPractice(module.id)}
+                        className="btn-primary flex items-center space-x-2 touch-manipulation whitespace-nowrap"
+                      >
+                        <Play className="h-4 w-4" />
+                        <span>{isStarted ? 'Continue' : 'Start'}</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
