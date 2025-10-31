@@ -128,14 +128,15 @@ const Analysis = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Learning Analytics</h1>
-        <p className="text-gray-600">Track your progress and identify areas for improvement</p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Learning Analytics</h1>
+          <p className="text-sm sm:text-base text-gray-600">Track your progress and identify areas for improvement</p>
+        </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Key Metrics */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
         <div className="card">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-primary-100">
@@ -467,7 +468,8 @@ const Analysis = () => {
             </table>
           </div>
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

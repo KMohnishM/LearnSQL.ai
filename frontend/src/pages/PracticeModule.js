@@ -32,6 +32,7 @@ const PracticeModule = () => {
   const [showHints, setShowHints] = useState(false);
   const [questionCount, setQuestionCount] = useState(1);
   const [copiedCode, setCopiedCode] = useState(null);
+  const [loadingNextQuestion, setLoadingNextQuestion] = useState(false);
 
   useEffect(() => {
     fetchModuleAndQuestion();
@@ -104,6 +105,7 @@ const PracticeModule = () => {
   };
 
   const nextQuestion = async () => {
+    setLoadingNextQuestion(true);
     try {
       // Cycle through difficulties based on performance
       let nextDifficulty = 'easy';
@@ -134,6 +136,8 @@ const PracticeModule = () => {
     } catch (error) {
       console.error('Error loading next question:', error);
       toast.error('Failed to load next question');
+    } finally {
+      setLoadingNextQuestion(false);
     }
   };
 
@@ -207,33 +211,34 @@ const PracticeModule = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="flex items-center space-x-4 mb-8">
-        <button
-          onClick={() => navigate('/practice')}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{module.name}</h1>
-          <p className="text-gray-600">Question {questionCount}</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Header */}
+        <div className="flex items-center space-x-3 sm:space-x-4 mb-6 sm:mb-8">
+          <button
+            onClick={() => navigate('/practice')}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{module.name}</h1>
+            <p className="text-sm sm:text-base text-gray-600">Question {questionCount}</p>
+          </div>
         </div>
-      </div>
 
-      {/* Question */}
-      <div className="card mb-6">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Question</h2>
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-            currentQuestion.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-            currentQuestion.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
-          }`}>
-            {currentQuestion.difficulty}
-          </span>
-        </div>
+        {/* Question */}
+        <div className="card mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Question</h2>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full self-start ${
+              currentQuestion.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
+              currentQuestion.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+              {currentQuestion.difficulty}
+            </span>
+          </div>
         
         <div className="space-y-3">
           {formatMessageContent(currentQuestion.question).map((part, index) => (
@@ -266,17 +271,17 @@ const PracticeModule = () => {
                     </span>
                     <button
                       onClick={() => copyCodeToClipboard(part.content, `question-${index}`)}
-                      className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                      className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors touch-manipulation"
                     >
                       {copiedCode === `question-${index}` ? (
                         <>
                           <Check className="h-3 w-3" />
-                          Copied!
+                          <span className="hidden sm:inline">Copied!</span>
                         </>
                       ) : (
                         <>
                           <Copy className="h-3 w-3" />
-                          Copy
+                          <span className="hidden sm:inline">Copy</span>
                         </>
                       )}
                     </button>
@@ -390,56 +395,64 @@ const PracticeModule = () => {
         )}
       </div>
 
-      {/* Answer Input */}
-      <div className="card mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Your SQL Query</h3>
-          <button
-            onClick={resetAnswer}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-            title="Reset answer"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-        </div>
-        
-        <textarea
-          value={userAnswer}
-          onChange={(e) => setUserAnswer(e.target.value)}
-          placeholder="Enter your SQL query here..."
-          className="textarea-field font-mono text-sm"
-          rows={8}
-          disabled={feedback !== null}
-        />
-        
-        <div className="mt-4 flex justify-end space-x-3">
-          {feedback === null ? (
+        {/* Answer Input */}
+        <div className="card mb-4 sm:mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Your SQL Query</h3>
             <button
-              onClick={submitAnswer}
-              disabled={submitting || !userAnswer.trim()}
-              className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={resetAnswer}
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors touch-manipulation"
+              title="Reset answer"
             >
-              {submitting ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              <span>{submitting ? 'Submitting...' : 'Submit Answer'}</span>
+              <RotateCcw className="h-4 w-4" />
             </button>
-          ) : (
-            <button
-              onClick={nextQuestion}
-              className="btn-primary"
-            >
-              Next Question
-            </button>
-          )}
+          </div>
+          
+          <textarea
+            value={userAnswer}
+            onChange={(e) => setUserAnswer(e.target.value)}
+            placeholder="Enter your SQL query here..."
+            className="textarea-field font-mono text-sm resize-none"
+            rows={6}
+            disabled={feedback !== null}
+          />
+          
+          <div className="mt-4 flex flex-col sm:flex-row justify-end gap-3 sm:gap-3 sm:space-x-0">
+            {feedback === null ? (
+              <button
+                onClick={submitAnswer}
+                disabled={submitting || !userAnswer.trim()}
+                className="btn-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto touch-manipulation"
+              >
+                {submitting ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                <span>{submitting ? 'Submitting...' : 'Submit Answer'}</span>
+              </button>
+            ) : (
+              <button
+                onClick={nextQuestion}
+                disabled={loadingNextQuestion}
+                className="btn-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto touch-manipulation"
+              >
+                {loadingNextQuestion ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <span>Next Question</span>
+                )}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Feedback */}
-      {feedback && (
-        <div className="card">
+        {/* Feedback */}
+        {feedback && (
+          <div className="card">
           <div className="flex items-center space-x-3 mb-4">
             {feedback.is_correct ? (
               <CheckCircle className="h-6 w-6 text-green-500" />
@@ -543,9 +556,10 @@ const PracticeModule = () => {
                 Next difficulty level: <span className="font-medium">{feedback.next_difficulty}</span>
               </p>
             </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

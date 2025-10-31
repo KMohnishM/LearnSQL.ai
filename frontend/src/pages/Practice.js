@@ -86,83 +86,86 @@ const Practice = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">SQL Learning Journey</h1>
-        <p className="text-gray-600">Master SQL through structured practice and adaptive learning</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">SQL Learning Journey</h1>
+          <p className="text-sm sm:text-base text-gray-600">Master SQL through structured practice and adaptive learning</p>
+        </div>
+
+        {/* Progress Overview */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="card">
+            <div className="flex items-center">
+              <div className="p-2 sm:p-3 rounded-full bg-primary-100">
+                <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-primary-600" />
+              </div>
+              <div className="ml-3 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Modules Started</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {Array.isArray(userProgress) ? userProgress.length : 0} / {Array.isArray(modules) ? modules.length : 0}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="flex items-center">
+              <div className="p-2 sm:p-3 rounded-full bg-green-100">
+                <Award className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+              </div>
+              <div className="ml-3 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Questions Correct</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {Array.isArray(userProgress) ? userProgress.reduce((sum, p) => sum + (p.questions_correct || 0), 0) : 0}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="flex items-center">
+              <div className="p-2 sm:p-3 rounded-full bg-blue-100">
+                <Play className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+              </div>
+              <div className="ml-3 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Attempts</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {Array.isArray(userProgress) ? userProgress.reduce((sum, p) => sum + (p.questions_attempted || 0), 0) : 0}
+                </p>
+              </div>
+            </div>
+          </div>
       </div>
 
-      {/* Progress Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-primary-100">
-              <BookOpen className="h-6 w-6 text-primary-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Modules Started</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {Array.isArray(userProgress) ? userProgress.length : 0} / {Array.isArray(modules) ? modules.length : 0}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100">
-              <Award className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Questions Correct</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {Array.isArray(userProgress) ? userProgress.reduce((sum, p) => sum + (p.questions_correct || 0), 0) : 0}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100">
-              <Play className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Attempts</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {Array.isArray(userProgress) ? userProgress.reduce((sum, p) => sum + (p.questions_attempted || 0), 0) : 0}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Learning Modules */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900">Learning Modules</h2>
-        
-        <div className="grid gap-6">
-          {modules.map((module) => {
-            const progress = getProgressForModule(module.id);
-            const isStarted = progress.questions_attempted > 0;
-            
-            return (
-              <div key={module.id} className="card hover:shadow-lg transition-shadow duration-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{module.name}</h3>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getModuleDifficultyColor(module.difficulty_level)}`}>
-                        {module.difficulty_level}
-                      </span>
-                      {isStarted && (
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(progress.current_difficulty)}`}>
-                          Current: {progress.current_difficulty}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <p className="text-gray-600 mb-4">{module.description}</p>
+        {/* Learning Modules */}
+        <div className="space-y-4 sm:space-y-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Learning Modules</h2>
+          
+          <div className="grid gap-4 sm:gap-6">
+            {modules.map((module) => {
+              const progress = getProgressForModule(module.id);
+              const isStarted = progress.questions_attempted > 0;
+              
+              return (
+                <div key={module.id} className="card hover:shadow-lg transition-shadow duration-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-3 mb-3">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{module.name}</h3>
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getModuleDifficultyColor(module.difficulty_level)}`}>
+                            {module.difficulty_level}
+                          </span>
+                          {isStarted && (
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(progress.current_difficulty)}`}>
+                              Current: {progress.current_difficulty}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm sm:text-base text-gray-600 mb-4">{module.description}</p>
                     
                     {isStarted && (
                       <div className="space-y-2">
@@ -183,19 +186,20 @@ const Practice = () => {
                       </div>
                     )}
                   </div>
-                  
-                  <button
-                    onClick={() => startPractice(module.id)}
-                    className="ml-6 btn-primary flex items-center space-x-2"
-                  >
-                    <Play className="h-4 w-4" />
-                    <span>{isStarted ? 'Continue' : 'Start'}</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                    
+                    <button
+                      onClick={() => startPractice(module.id)}
+                      className="w-full sm:w-auto sm:ml-6 btn-primary flex items-center justify-center space-x-2 touch-manipulation"
+                    >
+                      <Play className="h-4 w-4" />
+                      <span>{isStarted ? 'Continue' : 'Start'}</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

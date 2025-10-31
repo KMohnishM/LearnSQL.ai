@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import logging
 from typing import List
-from app.models import LearningModule, SubmitAnswerRequest, SubmitAnswerResponse
+from app.models import LearningModule, SubmitAnswerRequest, SubmitAnswerResponse, DynamicExampleRequest
 from app.database import execute_query_sync as execute_query, execute_insert_sync as execute_insert
 from app.services.simple_question_service import ComprehensiveQuestionService
 import json
@@ -214,29 +214,34 @@ async def get_cheat_sheet():
     return question_service.get_cheat_sheet()
 
 @router.post("/cheat-sheet/example")
-async def get_dynamic_example(request: dict):
+async def get_dynamic_example(request: DynamicExampleRequest):
     """Generate a dynamic business scenario example for a cheat sheet item"""
     try:
-        command = request.get("command")
-        syntax = request.get("syntax") 
-        category = request.get("category")
-        
-        if not command:
-            raise HTTPException(status_code=400, detail="Missing command parameter")
-        
-        example = await question_service.generate_dynamic_example(command, syntax, category)
+        example = await question_service.generate_dynamic_example(
+            request.command, request.syntax, request.category
+        )
         return example
     except Exception as e:
-        # Log the error and return a safe fallback example to avoid 500 responses to the frontend
+        # If this is an HTTPException (client error), re-raise so FastAPI returns the proper status
+        if isinstance(e, HTTPException):
+            raise
+
+        # Use exception logging so stacktrace is captured. Also log repr(e) in case str(e) is empty.
         logger = logging.getLogger(__name__)
-        logger.error(f"Failed to generate dynamic example: {e}")
+        logger.exception("Failed to generate dynamic example")
+        logger.error(f"Exception (repr): {repr(e)}")
+        try:
+            logger.debug(f"Request body for dynamic example: {request}")
+        except Exception:
+            # ignore errors while trying to log request
+            pass
 
         # Provide a friendly fallback so the frontend can display a helpful message
         return {
             "scenario": "Real-Time Scenario",
             "business_context": "Unable to generate real-time example at this time.",
             "table_description": "",
-            "sql_example": syntax or (command or ""),
+            "sql_example": request.syntax or request.command or "",
             "explanation": "Please try again later or refer to the static example provided.",
             "sample_data": ""
         }

@@ -40,9 +40,9 @@ function AppContent() {
   }, [location.pathname, updateContext]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 safe-area-padding">
       <Navbar />
-      <main>
+      <main className="pb-20 sm:pb-0"> {/* Extra padding for mobile to avoid chatbot overlap */}
         <Routes>
           <Route path="/" element={<CheatSheet />} />
           <Route path="/practice" element={<Practice />} />
@@ -63,12 +63,15 @@ function App() {
       <ChatbotProvider>
         <AppContent />
         <Toaster
-          position="top-right"
+          position="top-center"
           toastOptions={{
             duration: 3000,
             style: {
               background: '#363636',
               color: '#fff',
+              fontSize: '14px',
+              maxWidth: '90vw',
+              padding: '12px 16px',
             },
             success: {
               iconTheme: {

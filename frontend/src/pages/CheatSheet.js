@@ -76,14 +76,20 @@ const CheatSheet = () => {
   };
 
   const generateDynamicExample = async (item) => {
+    // Validate that we have a command before making the API call
+    if (!item.command || !item.command.trim()) {
+      toast.error('No command available for this cheat sheet item');
+      return;
+    }
+
     setLoadingExample(true);
     setShowModal(true);
     
     try {
       const response = await apiService.getDynamicExample({
         command: item.command,
-        syntax: item.syntax,
-        category: item.category
+        syntax: item.syntax || "",
+        category: item.category || ""
       });
       
       setDynamicExample(response.data);
@@ -120,157 +126,177 @@ const CheatSheet = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">SQL Cheat Sheet</h1>
-        <p className="text-gray-600">Quick reference for SQL syntax and examples</p>
-      </div>
-
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <input
-            type="text"
-            placeholder="Search SQL commands, syntax, or descriptions..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">SQL Cheat Sheet</h1>
+          <p className="text-sm sm:text-base text-gray-600">Quick reference for SQL syntax and examples</p>
         </div>
-        
-        <div className="relative">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <select
-            className="appearance-none pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            {categories.map((category, index) => (
-              <option key={`category-${index}`} value={category}>{category}</option>
-            ))}
-          </select>
+
+        {/* Search and Filter */}
+        <div className="flex flex-col gap-3 mb-6 sm:mb-8">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Search SQL commands, syntax..."
+              className="w-full pl-10 pr-4 py-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base bg-white shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <select
+              className="appearance-none w-full pl-10 pr-8 py-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-base shadow-sm"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              {categories.map((category, index) => (
+                <option key={`category-${index}`} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
 
-      {/* Cheat Sheet Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredData.map((item) => (
-          <div key={item.id} className="card hover:shadow-lg transition-shadow duration-200">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{item.command}</h3>
-                <span className="inline-block px-2 py-1 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
-                  {item.category}
-                </span>
-              </div>
-              <button
-                onClick={() => copyToClipboard(item.syntax, item.id)}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                title="Copy syntax"
-              >
-                {copiedId === item.id ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-
-            {item.description && (
-              <p className="text-gray-600 text-sm mb-4">{item.description}</p>
-            )}
-
-            <div className="space-y-3">
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Syntax:</h4>
-                <SyntaxHighlighter
-                  language="sql"
-                  style={tomorrow}
-                  customStyle={{
-                    margin: 0,
-                    padding: '0.75rem',
-                    fontSize: '0.875rem',
-                    borderRadius: '0.5rem',
-                  }}
-                >
-                  {item.syntax}
-                </SyntaxHighlighter>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Example:</h4>
-                <SyntaxHighlighter
-                  language="sql"
-                  style={tomorrow}
-                  customStyle={{
-                    margin: 0,
-                    padding: '0.75rem',
-                    fontSize: '0.875rem',
-                    borderRadius: '0.5rem',
-                  }}
-                >
-                  {item.example}
-                </SyntaxHighlighter>
-              </div>
-
-              {/* Dynamic Example Button */}
-              <div className="pt-2">
+        {/* Cheat Sheet Grid */}
+        <div className="space-y-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 sm:space-y-0">
+          {filteredData.map((item) => (
+            <div key={item.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+              {/* Header with command name and copy button */}
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.command}</h3>
+                  <span className="inline-block px-2 py-1 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
+                    {item.category}
+                  </span>
+                </div>
                 <button
-                  onClick={() => generateDynamicExample(item)}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors duration-200"
+                  onClick={() => copyToClipboard(item.syntax, item.id)}
+                  className="p-3 text-gray-400 hover:text-gray-600 transition-colors touch-manipulation ml-2 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-50"
+                  title="Copy syntax"
                 >
-                    <Sparkles className="h-4 w-4" />
-                    Generate Real-Time Scenario
+                  {copiedId === item.id ? (
+                    <Check className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <Copy className="h-5 w-5" />
+                  )}
                 </button>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {filteredData.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No cheat sheet entries found matching your criteria.</p>
-        </div>
-      )}
+              {/* Description */}
+              {item.description && (
+                <p className="text-gray-600 text-sm mb-4 leading-relaxed">{item.description}</p>
+              )}
 
-      {/* Dynamic Example Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary-500" />
-             Dynamic Real-Time Scenario
-              </h2>
-              <button
-                onClick={closeModal}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              {loadingExample ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <Loader className="h-8 w-8 animate-spin text-primary-500 mx-auto mb-4" />
-                <p className="text-gray-600">Generating real-time scenario...</p>
+              {/* Code sections */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Syntax:</h4>
+                  <div className="relative">
+                    <SyntaxHighlighter
+                      language="sql"
+                      style={tomorrow}
+                      customStyle={{
+                        margin: 0,
+                        padding: '12px',
+                        fontSize: '13px',
+                        borderRadius: '8px',
+                        lineHeight: '1.4',
+                      }}
+                    >
+                      {item.syntax}
+                    </SyntaxHighlighter>
                   </div>
                 </div>
-              ) : dynamicExample ? (
-                <div className="space-y-6">
-                  {/* Scenario Header */}
-                  <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      🏢 {dynamicExample.scenario}
-                    </h3>
-                    <p className="text-gray-700">{dynamicExample.business_context}</p>
-                  </div>
 
-                  {/* Table Description */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Example:</h4>
+                  <div className="relative">
+                    <SyntaxHighlighter
+                      language="sql"
+                      style={tomorrow}
+                      customStyle={{
+                        margin: 0,
+                        padding: '12px',
+                        fontSize: '13px',
+                        borderRadius: '8px',
+                        lineHeight: '1.4',
+                      }}
+                    >
+                      {item.example}
+                    </SyntaxHighlighter>
+                  </div>
+                </div>
+
+                {/* Dynamic Example Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => generateDynamicExample(item)}
+                    disabled={loadingExample}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 rounded-lg transition-colors duration-200 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                  >
+                      {loadingExample ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          <span>Generate Example</span>
+                        </>
+                      )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredData.length === 0 && (
+          <div className="text-center py-12 px-4">
+            <div className="max-w-sm mx-auto">
+              <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-base">No cheat sheet entries found matching your search.</p>
+              <p className="text-gray-400 text-sm mt-2">Try adjusting your search terms or filter.</p>
+            </div>
+          </div>
+        )}        {/* Dynamic Example Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+            <div className="bg-white rounded-t-2xl sm:rounded-xl w-full sm:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary-500" />
+                  <span>Dynamic Scenario</span>
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="p-3 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin">
+                {loadingExample ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Loader className="h-8 w-8 animate-spin text-primary-500 mx-auto mb-4" />
+                      <p className="text-base text-gray-600">Generating scenario...</p>
+                    </div>
+                  </div>
+              ) : dynamicExample ? (
+                  <div className="space-y-4 sm:space-y-6">
+                    {/* Scenario Header */}
+                    <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-3 sm:p-4">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+                        🏢 {dynamicExample.scenario}
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-700">{dynamicExample.business_context}</p>
+                    </div>                  {/* Table Description */}
                   {dynamicExample.table_description && (
                     <div>
                       <h4 className="text-md font-semibold text-gray-900 mb-2">Database Context:</h4>
@@ -337,9 +363,10 @@ const CheatSheet = () => {
                 </div>
               ) : null}
             </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

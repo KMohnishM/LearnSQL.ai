@@ -5,19 +5,35 @@ from app.database import execute_query_sync as execute_query
 
 router = APIRouter()
 
-@router.get("/cheatsheet", response_model=List[CheatSheetEntry])
+@router.get("/cheatsheet")
 async def get_cheatsheet():
     """Get all cheat sheet entries"""
     query = "SELECT * FROM cheat_sheet_entries ORDER BY category, topic"
     entries = execute_query(query)
-    return entries
+    
+    # Transform the data: add 'command' field mapped from 'topic' for frontend compatibility
+    transformed_entries = []
+    for entry in entries:
+        transformed_entry = dict(entry)
+        transformed_entry['command'] = entry['topic']  # Add command field for frontend
+        transformed_entries.append(transformed_entry)
+    
+    return transformed_entries
 
 @router.get("/cheatsheet/category/{category}")
 async def get_cheatsheet_by_category(category: str):
     """Get cheat sheet entries by category"""
     query = "SELECT * FROM cheat_sheet_entries WHERE category = ? ORDER BY topic"
     entries = execute_query(query, (category,))
-    return entries
+    
+    # Transform the data: add 'command' field mapped from 'topic' for frontend compatibility
+    transformed_entries = []
+    for entry in entries:
+        transformed_entry = dict(entry)
+        transformed_entry['command'] = entry['topic']  # Add command field for frontend
+        transformed_entries.append(transformed_entry)
+    
+    return transformed_entries
 
 @router.get("/cheatsheet/search/{search_term}")
 async def search_cheatsheet(search_term: str):
@@ -29,4 +45,12 @@ async def search_cheatsheet(search_term: str):
     """
     search_pattern = f"%{search_term}%"
     entries = execute_query(query, (search_pattern, search_pattern, search_pattern))
-    return entries
+    
+    # Transform the data: add 'command' field mapped from 'topic' for frontend compatibility
+    transformed_entries = []
+    for entry in entries:
+        transformed_entry = dict(entry)
+        transformed_entry['command'] = entry['topic']  # Add command field for frontend
+        transformed_entries.append(transformed_entry)
+    
+    return transformed_entries

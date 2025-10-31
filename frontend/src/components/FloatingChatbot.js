@@ -208,13 +208,13 @@ const FloatingChatbot = () => {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-primary-600 hover:bg-primary-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-105"
+          className="bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-full p-3 sm:p-4 shadow-lg transition-all duration-200 hover:scale-105 touch-manipulation"
           title="SQL Learning Assistant"
         >
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
       </div>
     );
@@ -229,26 +229,26 @@ const FloatingChatbot = () => {
       
       <div className={`fixed z-50 ${
         isFullScreen 
-          ? 'inset-4' 
-          : 'bottom-6 right-6'
+          ? 'inset-2 sm:inset-4' 
+          : 'bottom-4 right-4 left-4 sm:bottom-6 sm:right-6 sm:left-auto'
       }`}>
         <div className={`bg-white shadow-2xl border border-gray-200 flex flex-col overflow-hidden ${
           isFullScreen 
             ? 'w-full h-full rounded-lg' 
-            : 'rounded-xl w-96 h-[32rem]'
+            : 'rounded-xl w-full sm:w-96 h-[85vh] max-h-[600px] sm:h-[32rem]'
         }`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary-600 to-blue-600 text-white p-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Sparkles className="h-5 w-5" />
+        <div className="bg-gradient-to-r from-primary-600 to-blue-600 text-white p-3 sm:p-4 flex justify-between items-center">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="relative flex-shrink-0">
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
               {isLoading && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               )}
             </div>
-            <div>
-              <h3 className="font-semibold">SQL Assistant</h3>
-              <p className="text-xs opacity-90 flex items-center gap-1">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm sm:text-base truncate">SQL Assistant</h3>
+              <p className="text-xs opacity-90 flex items-center gap-1 truncate">
                 {isLoading ? (
                   <>
                     <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
@@ -262,10 +262,10 @@ const FloatingChatbot = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <button
               onClick={clearChat}
-              className="p-1 hover:bg-white hover:bg-opacity-20 rounded"
+              className="p-1.5 sm:p-1 hover:bg-white hover:bg-opacity-20 rounded touch-manipulation"
               title="Clear chat"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,7 +274,7 @@ const FloatingChatbot = () => {
             </button>
             <button
               onClick={toggleFullScreen}
-              className="p-1 hover:bg-white hover:bg-opacity-20 rounded"
+              className="p-1.5 sm:p-1 hover:bg-white hover:bg-opacity-20 rounded touch-manipulation"
               title={isFullScreen ? "Minimize" : "Maximize"}
             >
               {isFullScreen ? (
@@ -285,7 +285,7 @@ const FloatingChatbot = () => {
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-white hover:bg-opacity-20 rounded"
+              className="p-1.5 sm:p-1 hover:bg-white hover:bg-opacity-20 rounded touch-manipulation"
             >
               <X className="h-4 w-4" />
             </button>
@@ -293,22 +293,22 @@ const FloatingChatbot = () => {
         </div>
 
         {/* Messages */}
-        <div className={`flex-1 overflow-y-auto space-y-4 ${
-          isFullScreen ? 'p-6' : 'p-4'
+        <div className={`flex-1 overflow-y-auto space-y-3 sm:space-y-4 scrollbar-thin ${
+          isFullScreen ? 'p-4 sm:p-6' : 'p-3 sm:p-4'
         }`}>
           {messages.map((message) => (
             <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`${
-                isFullScreen ? 'max-w-[70%]' : 'max-w-[85%]'
+                isFullScreen ? 'max-w-[70%]' : 'max-w-[90%] sm:max-w-[85%]'
               } ${
                 message.type === 'user' 
-                  ? 'bg-primary-600 text-white rounded-lg p-3' 
+                  ? 'bg-primary-600 text-white rounded-lg p-2.5 sm:p-3' 
                   : 'bg-white border border-gray-200 rounded-lg shadow-sm'
               }`}>
                 {message.type === 'user' ? (
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 ) : (
-                  <div className="p-3">
+                  <div className="p-2.5 sm:p-3">
                     {formatMessageContent(message.content).map((part, index) => (
                       <div key={index} className="mb-3 last:mb-0">
                         {part.type === 'markdown' ? (
@@ -420,8 +420,8 @@ const FloatingChatbot = () => {
         </div>
 
         {/* Input */}
-        <div className={`border-t border-gray-200 bg-gray-50 ${
-          isFullScreen ? 'p-6' : 'p-4'
+        <div className={`border-t border-gray-200 bg-gray-50 safe-area-padding ${
+          isFullScreen ? 'p-4 sm:p-6' : 'p-3 sm:p-4'
         }`}>
           <div className="flex gap-2 mb-2">
             <textarea
@@ -429,17 +429,17 @@ const FloatingChatbot = () => {
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask me about SQL syntax, JOINs, queries..."
-              className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white shadow-sm"
+              className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white shadow-sm min-h-[44px] sm:min-h-[32px]"
               rows={1}
               disabled={isLoading}
             />
             <button
               onClick={sendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className={`rounded-lg px-3 py-2 transition-all duration-200 ${
+              className={`rounded-lg px-3 py-2 min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px] transition-all duration-200 touch-manipulation ${
                 !inputMessage.trim() || isLoading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow-md transform hover:scale-105'
+                  : 'bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white shadow-sm hover:shadow-md'
               }`}
             >
               {isLoading ? (
@@ -456,7 +456,7 @@ const FloatingChatbot = () => {
               <button
                 key={suggestion}
                 onClick={() => setInputMessage(suggestion)}
-                className="text-xs bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-2 py-1 transition-colors"
+                className="text-xs bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-600 border border-gray-200 rounded-full px-2 py-1.5 sm:py-1 transition-colors touch-manipulation min-h-[32px] sm:min-h-[auto]"
                 disabled={isLoading}
               >
                 {suggestion}
@@ -464,12 +464,12 @@ const FloatingChatbot = () => {
             ))}
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <p className="text-xs text-gray-500 flex items-center gap-1">
               <Target className="h-3 w-3" />
               Context-aware SQL help
             </p>
-            <div className="flex items-center gap-1 text-xs text-gray-400">
+            <div className="hidden sm:flex items-center gap-1 text-xs text-gray-400">
               <span>Press</span>
               <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs">Enter</kbd>
               <span>to send</span>

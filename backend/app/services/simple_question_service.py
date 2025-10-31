@@ -425,6 +425,8 @@ Return ONLY a JSON response with this structure:
                 return example_data
                 
             except json.JSONDecodeError:
+                # Log the raw response so we can debug malformed LLM output
+                logger.warning("Could not parse JSON from LLM response for dynamic example. Raw response: %s", response[:1000])
                 # Fallback to structured response if JSON parsing fails
                 return {
                     "scenario": scenario,
@@ -436,7 +438,9 @@ Return ONLY a JSON response with this structure:
                 }
                 
         except Exception as e:
-            logger.error(f"Error generating dynamic example: {e}")
+            # Capture full stack trace and repr for debugging
+            logger.exception("Error generating dynamic example")
+            logger.error(f"Exception (repr): {repr(e)}")
             # Fallback example
             return {
                 "scenario": scenario,
